@@ -6,7 +6,7 @@ import { app } from "./app.js";
 dotenv.config()
 
 
-
+//This the connections to Database 
 const connectDB = async () => {
     try {
         const connectionInstance = await mongoose.connect(`mongodb+srv://prk:prk123@cluster0.bwam6lg.mongodb.net/?appName=Cluster0/${DB_NAME}`)
