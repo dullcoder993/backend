@@ -22,3 +22,4 @@ import useRouter from './routes/user.routes.js'
 app.use('/api/v1/users',useRouter)
 
 export {app}
+
