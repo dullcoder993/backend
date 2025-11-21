@@ -3,6 +3,8 @@ import {ApiError} from '../utils/ApiError.js'
 import {user} from '../models/user.model.js'
 import {uploadOnCloudinary} from '../utils/cloudinary.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
+import fs from "fs"
+import path from 'path'
 
 const registerUser = asyncHandler( async(req,res,next)=>{
     
@@ -34,7 +36,7 @@ const registerUser = asyncHandler( async(req,res,next)=>{
 
     //Step 3 
 
-    const existingUser = user.findOne({
+    const existingUser =await user.findOne({
         $or: [{username},{email}]
     })
     if(existingUser){
@@ -42,40 +44,44 @@ const registerUser = asyncHandler( async(req,res,next)=>{
     }
     //Step 4
 
-    const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverLocalPath = req.files?.coverImage[0]?.path;
+    let avatarLocalPath = req.files?.avatar[0]?.path;
+    let coverLocalPath = req.files?.coverImage[0]?.path;
+    
     if(!avatarLocalPath){
         throw new ApiError(400,"Avatar file is required")
+    }else{
+        console.log('file upload to multer.')
+    }
+    if(!coverLocalPath){
+        throw new ApiError(400,"Cover file is required")
     }
     //Step 5
-
-    const avatar = await uploadOnCloudinary(avatarLocalPath);
-    const cover = await uploadOnCloudinary(coverLocalPath);
-
+    avatarLocalPath = path.resolve(avatarLocalPath);
+    coverLocalPath = path.resolve(coverLocalPath)
+    const fixedAvatarPath = avatarLocalPath.replace(/\\/g, "/")
+    const avatar = await uploadOnCloudinary(fixedAvatarPath)
+    console.log(fixedAvatarPath)
+    const fixedCoverPath = coverLocalPath?.replace(/\\/g, "/")
+    const cover = await uploadOnCloudinary(fixedCoverPath)
     if(!avatar){
-        throw new ApiError(400,'Avatar file is required.Retry.')
-    }
+        throw new ApiError(400,'Avatar file is required.Retry.')}
     //Step 6
-
     const User = await user.create({
         fullName,
         avatar: avatar.url,
-        coverImage: coverImage?.url||'',
+        cover: cover?.url||'',
         email,
         username,
         password
     })
     //Step 7
-
-    const createUser = await user.findById(user._id).select(
-        '-password -refreshToken'
-    )
+    const createUser = await user.findById(User._id).select(
+        '-password -refreshToken')
     //Step 8
     if(!createUser){
         throw new ApiError(500,'Something went wrong when creating user try again.')
     }
     //Step 9
-
     return res.status(201).json(
         new ApiResponse(200,createUser,'User created Successfully')
     )
