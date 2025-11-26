@@ -1,13 +1,13 @@
-import { asyncHandler } from "../utils/asyncHandler";
-import {ApiError} from "../utils/ApiError"
+import { asyncHandler } from "../utils/asyncHandler.js";
+import {ApiError} from "../utils/ApiError.js"
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
-import {user} from "../models/user.model"
+import {user} from "../models/user.model.js"
 
 dotenv.config()
 
 
-export const varifyJWT = asyncHandler(async(req,res,next)=>{
+export const verifyJWT = asyncHandler(async(req,res,next)=>{
     try {
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ","")
     
@@ -28,3 +28,5 @@ export const varifyJWT = asyncHandler(async(req,res,next)=>{
         throw new ApiError(400,error?.message || "Invalid access token")
     }
 })
+
+export default verifyJWT;

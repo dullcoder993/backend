@@ -1,6 +1,6 @@
 import {asyncHandler} from '../utils/asyncHandler.js'
 import {ApiError} from '../utils/ApiError.js'
-import {user,isPasswordCorrect} from '../models/user.model.js'
+import {user} from '../models/user.model.js'
 import {uploadOnCloudinary} from '../utils/cloudinary.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
 import fs from "fs"
@@ -109,29 +109,31 @@ const loginUser = asyncHandler(async(req,res,next)=>{
     // 5.Give Access and Refresh Token
     // 6.Send cookies(response)
 
-    const {email,username,password} =req.body
+    const { email, username, password} =req.body
 
     if(!username && !email){
-        throw new ApiError(400,'Username or Password required')
+        throw new ApiError(400,'Username or Email required')
     }
 
     const User =await user.findOne({
         $or: [{username},{email}]
     })
     if(!User){
-        throw new ApiError(404,'Usern does not exist')
+        throw new ApiError(404,'User does not exist')
     }
     if(!password){
         throw new ApiError(400,'Password is required')
     }
-    const passwordValid =await isPasswordCorrect(password)
-
+    const passwordValid = await User.isPasswordCorrect(password)
+    
     if(!passwordValid){
         throw new ApiError(401,'Password is incorrect')
+    }else{
+        console.log("Password is correct")
     }
     const {accessToken,refreshToken}=await generateToken(User._id)
 
-    const loggedUser = user.findById(User._id).select("-password -refreshToken")
+    const loggedUser = await user.findById(User._id).select("-password -refreshToken")
 
     // cookies
 
