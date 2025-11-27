@@ -5,6 +5,11 @@ import {uploadOnCloudinary} from '../utils/cloudinary.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
 import fs from "fs"
 import path from 'path'
+import jwt from 'jsonwebtoken'
+import dotenv from "dotenv"
+
+dotenv.config()
+
 
 const generateToken = async(userId)=>
 {
@@ -180,7 +185,53 @@ const loguotUser = asyncHandler(async(req, res)=>{
     .json(new ApiResponse(200,{},"User logout."))
 })
 
+const refreshAccessToken = asyncHandler(async(req,res)=>{
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+    if(!incomingRefreshToken){
+        throw new ApiError(400,"Unauthorized request")
+    }
+
+    try {
+        const decodedToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.ACCESS_TOKEN_SECRET
+        )
+    
+        const User = await  user.findById(decodedToken?._id)
+        if(!User){
+            throw new ApiError(400,"Invalid refresh token")
+        }
+        if(incomingRefreshToken !== user?.refreshToken){
+            throw new ApiError(400,"Wrong Token")
+        }
+    
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+        const {accessToken,newRefreshToken} = await generateToken(user._id)
+    
+        return res
+        .status(200)
+        .cookie("accessToken",accessToken,options)
+        .cookie("refreshToken",newRefreshToken,options)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    accessToken,refreshToken : newRefreshToken
+                },
+                "Access token refreshed"
+            )
+        )
+    } catch (error) {
+        throw new ApiError(401,error?.message || "Invalid refresh Token")
+    }
+})
+
 export {registerUser,
     loginUser,
-    loguotUser
+    loguotUser,
+    refreshAccessToken
 }
