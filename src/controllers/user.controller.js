@@ -202,7 +202,7 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
         if(!User){
             throw new ApiError(400,"Invalid refresh token")
         }
-        if(incomingRefreshToken !== user?.refreshToken){
+        if(incomingRefreshToken !== User?.refreshToken){
             throw new ApiError(400,"Wrong Token")
         }
     
@@ -210,7 +210,7 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
             httpOnly: true,
             secure: true
         }
-        const {accessToken,newRefreshToken} = await generateToken(user._id)
+        const {accessToken,newRefreshToken} = await generateToken(User._id)
     
         return res
         .status(200)
