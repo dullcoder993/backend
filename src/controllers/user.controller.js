@@ -130,6 +130,7 @@ const loginUser = asyncHandler(async(req,res,next)=>{
     if(!password){
         throw new ApiError(400,'Password is required')
     }
+    
     const passwordValid = await User.isPasswordCorrect(password)
     
     if(!passwordValid){
@@ -233,23 +234,25 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
 // Extra controller for practice...
 const changeUserPassword = asyncHandler(async(req,res)=>{
     const {oldPassword,newPassword,confirmPassword} = req.body
-
-    const User = await user.findById(req.user?._id)
-    const checkPassword =await User.isPasswordCorrect(oldPassword)
+    if(!oldPassword){
+        throw new ApiError(400,"Required old password.")
+    }
+    const User = await user.findById(req.User?._id)
+    const checkPassword = await User.isPasswordCorrect(oldPassword)
     if(!checkPassword){
         throw new ApiError(400,"Wrong password")
     }
     if(!newPassword || !confirmPassword){
         throw new ApiError(400,"Required field is empty")
     }
-    if(newPassword === confirmPassword){
+    if(newPassword !== confirmPassword){
         throw new ApiError(400,"Confirm password should be same as new password.")
     }
     if(user.password === newPassword){
         throw new ApiError(400,"New password is same as old password.")
     }
-    user.password = newPassword;
-    await user.save({validateBeforeSave: false})
+    User.password = newPassword;
+    await User.save({validateBeforeSave: false})
     
     return res
     .status(200)
@@ -260,18 +263,17 @@ const getCurrentUser = asyncHandler(async(req,res)=>{
     return res
     .status(200)
     .json(
-        200,
-        req.user,"Current user fetched successfully"
+        new ApiResponse(200,req.User,"Current user fetched successfully")
     )
 })
 
 const updateDetail = asyncHandler(async(req,res)=>{
     const {email,fullName} = req.body
-    if(!email || !fullName){
+    if(!email && !fullName){
         throw new ApiError(400,"required field is empty")
     }
     const User = await user.findByIdAndUpdate(
-        req.user?._id,
+        req.User?._id,
         {
             $set:{
                 fullName,
