@@ -49,6 +49,7 @@ const registerUser = asyncHandler( async(req,res,next)=>{
     if(!username||!fullName||!email||!password){
         throw new ApiError(400,'The required field is empty.' )
     }else{
+        // This is only for debugging.
         console.log(username);
         console.log(fullName);
         console.log(email);
@@ -58,6 +59,7 @@ const registerUser = asyncHandler( async(req,res,next)=>{
     //Step 3 
 
     const existingUser =await user.findOne({
+        // Used email or username because this are unique as written in user.model
         $or: [{username},{email}]
     })
     if(existingUser){
@@ -369,11 +371,11 @@ const getUserChannelProfile = asyncHandler(async(req,res)=>{
                     $size:"$subscribers"
                 },
                 channelsSubscribedToCount:{
-                    $size:"$subscribeTo"
+                    $size:"$subscribedTo"
                 },
                 isSubscribe:{
                     $cond:{
-                        if:{$in: [req.user?._id,"subscribers.subscriber"]},
+                        if:{$in: [req.user?._id,"$subscribers.subscriber"]},
                         then: true,
                         else: false 
                     }
@@ -392,6 +394,7 @@ const getUserChannelProfile = asyncHandler(async(req,res)=>{
             }
         }
     ])
+    console.log(channel)
     if(!channel?.length){
         throw new ApiError(404,"Channel does not exist")
     }
@@ -406,7 +409,7 @@ const getWatchHistory = asyncHandler(async(req,res)=>{
     const User = await user.aggregate([
         {
             $match:{
-                _id: new mongoose.Types.ObjectId(req.user._id)
+                _id: new mongoose.Types.ObjectId(req.User._id)
             }
         },
         {
@@ -424,13 +427,13 @@ const getWatchHistory = asyncHandler(async(req,res)=>{
                             as:"owner",
                             pipeline:[
                                 {
-                                    $lookup:{
+                                    
                                         $project:{
                                             username:1,
                                             fullName:1,
                                             avatar:1
                                         }
-                                    }
+                                    
                                 }
                             ]
                         }
@@ -452,7 +455,7 @@ const getWatchHistory = asyncHandler(async(req,res)=>{
     .json(
         new ApiResponse(
             200,
-            user[0].watchHistory,
+            User[0].watchHistory,
             "Watch Histort Fetched Successfully."
         )
     )

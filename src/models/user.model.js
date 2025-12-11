@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema(
     {
         username :{
             type: String,
-            required : [true, 'Username is required'],
+            required : [true, 'Username is required'],//if want to send placeholder
             unique:true,
             lowercase : true,
             trim: true,
@@ -22,13 +22,13 @@ const userSchema = new mongoose.Schema(
             trim: true,
         },
         fullName:{
-            type:String,
+            type: String,
             required: [true, 'FullName is required'],
             index: true,
             trim:true
         },
         password:{
-            type:String,
+            type: String,
             required:[true,'password is required'],
         },
         avatar:{
@@ -50,6 +50,7 @@ const userSchema = new mongoose.Schema(
     },
     {
         timestamps:true
+        // give data about when created and updated in db.
     }
 )
     userSchema.pre("save", async function (next) {

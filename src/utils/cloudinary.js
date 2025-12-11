@@ -13,7 +13,6 @@ const cloud_keys = v2.config({
 const uploadOnCloudinary = async (localFilePath)=>{
     try {
         if(!localFilePath) {
-            console.log('here')
             return null
         }
         //upload the file
@@ -22,13 +21,13 @@ const uploadOnCloudinary = async (localFilePath)=>{
         })
         // file has been uploaded successfully
         console.log('File is uploaded on cloudinary', response.url);
+        // remove the locally saved temporary file as the upload operation got successful.
         fs.unlinkSync(localFilePath)
         return response;
     }
     catch (error) {
         // remove the locally saved temporary file as the upload operation got failed
         fs.unlinkSync(localFilePath)
-        console.log('not here')
         console.log(cloud_keys)
         return null;
     }
