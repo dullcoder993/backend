@@ -10,10 +10,6 @@ import { video } from "../models/video.model.js";
 
 dotenv.config
 
-const getAllVideos = asyncHandler(async(req,res,next)=>{
-
-})
-
 const publishVideo = asyncHandler(async(req,res)=>{
     const {title,discription} = req.body
     if(!title || !discription){
@@ -41,7 +37,6 @@ const publishVideo = asyncHandler(async(req,res)=>{
     if(!thumbnail){
         throw new ApiError(400,"Thumbnail is required, retry.")
     }
-    console.log(videoFile.url)
     const Video = await video.create({
         title,
         discription,
@@ -58,4 +53,60 @@ const publishVideo = asyncHandler(async(req,res)=>{
     )
 })
 
-export {publishVideo}
+const getAllVideos = asyncHandler(async(req,res)=>{
+    const videos = await video.find({})
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,videos,"All video fetched successfully.")
+    )
+})
+
+const updateVideo = asyncHandler(async(req,res)=>{
+    const {title,discription} = req.body
+    if(!title && !discription){
+        throw new ApiError(400,"required field is empty")
+    }
+    const Video = await video.findByIdAndUpdate(
+        req.params.id,
+        {
+            $set:{
+                title,
+                discription
+            }
+        },
+        {new:true}
+    )
+    console.log(Video)
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,Video,"Video details updated successfully.")
+    )
+})
+const updateThumbnail = asyncHandler(async(req,res)=>{
+    const thumbnailLocalPath = req.file?.path
+    if(!thumbnailLocalPath){
+        throw new ApiError(400,"Thumbnail file is required.")
+    }
+    const thumbnail = await uploadOnCloudinary(thumbnailLocalPath)
+
+    if(!thumbnail.url){
+        throw new ApiError(400,"Something went wrong while uploading document. Retry.")
+    }
+    const Video = await video.findByIdAndUpdate(
+        req.params.id,
+        {
+            $set:{
+                thumbnail: thumbnail.url
+            }
+        },
+        {new:true}
+    )
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,Video,"Thumbnail changed successfully")
+    )
+})
+export {publishVideo, updateVideo,getAllVideos,updateThumbnail}
