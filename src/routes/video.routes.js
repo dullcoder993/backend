@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAllVideos, publishVideo, updateThumbnail, updateVideo } from "../controllers/video.controller.js";
+import { deleteVideo, getAllVideos, getVideoById, publishVideo, updateThumbnail, updateVideo } from "../controllers/video.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -14,9 +14,13 @@ router.route("/video").post(
 );
 router.route("/get-videos").get(getAllVideos)
 
-router.route("/c/change-details/:id").put(updateVideo)
+router.route("/c/change-details/:id").patch(updateVideo)
 
 router.route("/c/change-thumbnail/:id").patch(upload.single("thumbnail"),updateThumbnail)
+
+router.route("/c/getVideoByID/:id").get(getVideoById)
+
+router.route("/c/deleteByID/:id").get(deleteVideo)
 
 
 

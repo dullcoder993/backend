@@ -61,14 +61,17 @@ const getAllVideos = asyncHandler(async(req,res)=>{
         new ApiResponse(200,videos,"All video fetched successfully.")
     )
 })
-
 const updateVideo = asyncHandler(async(req,res)=>{
     const {title,discription} = req.body
     if(!title && !discription){
         throw new ApiError(400,"required field is empty")
     }
+    const videoId = req.params.id
+    if(!videoId){
+        throw new ApiError(400,"Video Id required.")
+    }
     const Video = await video.findByIdAndUpdate(
-        req.params.id,
+        videoId,
         {
             $set:{
                 title,
@@ -77,7 +80,10 @@ const updateVideo = asyncHandler(async(req,res)=>{
         },
         {new:true}
     )
-    console.log(Video)
+    if(!Video){
+        throw new ApiError(400,"Video is not found.")
+    }
+    
     return res
     .status(200)
     .json(
@@ -94,8 +100,12 @@ const updateThumbnail = asyncHandler(async(req,res)=>{
     if(!thumbnail.url){
         throw new ApiError(400,"Something went wrong while uploading document. Retry.")
     }
+    const videoId =req.params.id
+    if(!videoId){
+        throw new ApiError(400,"Video Id required.")
+    } 
     const Video = await video.findByIdAndUpdate(
-        req.params.id,
+        videoId,
         {
             $set:{
                 thumbnail: thumbnail.url
@@ -103,10 +113,46 @@ const updateThumbnail = asyncHandler(async(req,res)=>{
         },
         {new:true}
     )
+    if(!Video){
+        throw new ApiError(400,"Video is not found.")
+    }
     return res
     .status(200)
     .json(
         new ApiResponse(200,Video,"Thumbnail changed successfully")
     )
 })
-export {publishVideo, updateVideo,getAllVideos,updateThumbnail}
+
+const getVideoById = asyncHandler(async(req,res)=>{
+    const videoId = req.params.id
+    if(!videoId){
+        throw new ApiError(400,"Video Id required .")
+    }
+    const Video = await video.findById(
+        videoId
+    )
+    if(!Video){
+        throw new ApiError(400,"Video is not found")
+    }
+    return res
+    .status(201)
+    .json(
+        new ApiResponse(201,Video,"Video details fetched Successfully.")
+    )
+})
+
+const deleteVideo = asyncHandler(async(req,res)=>{
+    const videoId = req.params.id
+    if(!videoId){
+        throw new ApiError(400,"Video Id required.")
+    }
+    const Video = await video.findByIdAndDelete(
+        videoId
+    )
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,"Video deleted successfully")
+    )
+})
+export {publishVideo, updateVideo,getAllVideos,updateThumbnail,getVideoById,deleteVideo}
