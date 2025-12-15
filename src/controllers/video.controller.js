@@ -42,7 +42,7 @@ const publishVideo = asyncHandler(async(req,res)=>{
         discription,
         videoFile: videoFile.url,
         thumbnail: thumbnail.url,
-        owner : req.user?._id
+        owner : req.User?._id
     })
     
     if(!Video){
@@ -69,6 +69,9 @@ const updateVideo = asyncHandler(async(req,res)=>{
     const videoId = req.params.id
     if(!videoId){
         throw new ApiError(400,"Video Id required.")
+    }
+    if(video.User.id.toString() !== req.User.id){
+        throw new ApiError(400,"Cannot edit other user video")
     }
     const Video = await video.findByIdAndUpdate(
         videoId,
@@ -104,6 +107,9 @@ const updateThumbnail = asyncHandler(async(req,res)=>{
     if(!videoId){
         throw new ApiError(400,"Video Id required.")
     } 
+    if(video.User.id.toString() !== req.User.id){
+        throw new ApiError(400,"Cannot edit other user video")
+    }
     const Video = await video.findByIdAndUpdate(
         videoId,
         {
@@ -145,6 +151,9 @@ const deleteVideo = asyncHandler(async(req,res)=>{
     const videoId = req.params.id
     if(!videoId){
         throw new ApiError(400,"Video Id required.")
+    }
+    if(video.User.id.toString() !== req.User.id){
+        throw new ApiError(400,"Cannot delete other user video")
     }
     const Video = await video.findByIdAndDelete(
         videoId

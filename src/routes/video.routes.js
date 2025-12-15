@@ -20,7 +20,7 @@ router.route("/c/change-thumbnail/:id").patch(upload.single("thumbnail"),updateT
 
 router.route("/c/getVideoByID/:id").get(getVideoById)
 
-router.route("/c/deleteByID/:id").get(deleteVideo)
+router.route("/c/deleteByID/:id").delete(deleteVideo)
 
 
 
