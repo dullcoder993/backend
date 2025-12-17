@@ -38,7 +38,8 @@ const updateComment = asyncHandler(async(req,res)=>{
     
     
     const Comment = await comment.findById(commentId)
-    if(Comment.owner.id.equals(req.User._id)){
+    const checkOwner = Comment.owner == req.User.id
+    if(!checkOwner){
         throw new ApiError(400,"Can't update other people Comment.")
     }
     Comment.content = content
@@ -53,14 +54,16 @@ const updateComment = asyncHandler(async(req,res)=>{
     )
 })
 const deleteComment = asyncHandler(async(req,res)=>{
-    const commentId = req.params.body
+    const commentId = req.params.id
     if(!commentId){
         throw new ApiError(400,"CommentId is required.")
     }
-    if(comment.User.id !== req.User._id){
+    const Comment = await comment.findById(commentId)
+    const checkOwner = Comment.owner == req.User.id
+    if(!checkOwner){
         throw new ApiError(400,"Can't delete the other people comments.")
     }
-    const Comment = await comment.findByIdAndDelete(commentId)
+    await Comment.deleteOne();
 
     return res
     .status(200)

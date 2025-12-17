@@ -70,19 +70,16 @@ const updateVideo = asyncHandler(async(req,res)=>{
     if(!videoId){
         throw new ApiError(400,"Video Id required.")
     }
-    if(video.User.id.toString() !== req.User.id){
+    
+    const Video = await video.findById(videoId)
+    console.log(Video)
+    const checkOwner = Video.owner == req.User.id
+    if(!checkOwner){
         throw new ApiError(400,"Cannot edit other user video")
     }
-    const Video = await video.findByIdAndUpdate(
-        videoId,
-        {
-            $set:{
-                title,
-                discription
-            }
-        },
-        {new:true}
-    )
+    Video.title = title
+    Video.discription = discription
+    await Video.save()
     if(!Video){
         throw new ApiError(400,"Video is not found.")
     }
@@ -94,6 +91,18 @@ const updateVideo = asyncHandler(async(req,res)=>{
     )
 })
 const updateThumbnail = asyncHandler(async(req,res)=>{
+    const videoId =req.params.id
+    if(!videoId){
+        throw new ApiError(400,"Video Id required.")
+    } 
+    const Video = await video.findById(videoId)
+    if(!Video){
+        throw new ApiError(400,"Video is not found.")
+    }
+    const checkOwner = Video.owner == req.User.id
+    if(!checkOwner){
+        throw new ApiError(400,"Can't change details.")
+    }
     const thumbnailLocalPath = req.file?.path
     if(!thumbnailLocalPath){
         throw new ApiError(400,"Thumbnail file is required.")
@@ -103,25 +112,10 @@ const updateThumbnail = asyncHandler(async(req,res)=>{
     if(!thumbnail.url){
         throw new ApiError(400,"Something went wrong while uploading document. Retry.")
     }
-    const videoId =req.params.id
-    if(!videoId){
-        throw new ApiError(400,"Video Id required.")
-    } 
-    if(video.User.id.toString() !== req.User.id){
-        throw new ApiError(400,"Cannot edit other user video")
-    }
-    const Video = await video.findByIdAndUpdate(
-        videoId,
-        {
-            $set:{
-                thumbnail: thumbnail.url
-            }
-        },
-        {new:true}
-    )
-    if(!Video){
-        throw new ApiError(400,"Video is not found.")
-    }
+    Video.thumbnail = thumbnail.url;
+    await Video.save();
+
+    
     return res
     .status(200)
     .json(
@@ -152,12 +146,14 @@ const deleteVideo = asyncHandler(async(req,res)=>{
     if(!videoId){
         throw new ApiError(400,"Video Id required.")
     }
-    if(video.User.id.toString() !== req.User.id){
-        throw new ApiError(400,"Cannot delete other user video")
-    }
-    const Video = await video.findByIdAndDelete(
+    const Video = await video.findById(
         videoId
     )
+    const checkOwner = Video.owner == req.User.id
+    if(!checkOwner){
+        throw new ApiError(400,"Cannot delete other user video")
+    }
+    await Video.deleteOne()
     return res
     .status(200)
     .json(
