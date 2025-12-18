@@ -5,7 +5,6 @@ import jwt from "jsonwebtoken"
 import mongoose from "mongoose";
 import { comment } from "../models/comment.model.js";
 
-
 const getComment = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
     const { page = 1, limit = 10 } = req.query;
