@@ -5,6 +5,23 @@ import jwt from "jsonwebtoken"
 import mongoose from "mongoose";
 import { comment } from "../models/comment.model.js";
 
+
+const getComment = asyncHandler(async (req, res) => {
+    const { videoId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+
+    const skip = (page - 1) * limit;
+
+    const Comments = await comment.find({ Video: videoId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit));
+
+    return res.status(200).json(
+        new ApiResponse(200, Comments, "Comments fetched successfully")
+    );
+});
+
 const addComment = asyncHandler(async(req,res)=>{
     const {content,videoId} = req.body
     if(!content || !videoId){
@@ -53,6 +70,7 @@ const updateComment = asyncHandler(async(req,res)=>{
         new ApiResponse(200,Comment,"Comment updated successfully.")
     )
 })
+
 const deleteComment = asyncHandler(async(req,res)=>{
     const commentId = req.params.id
     if(!commentId){
@@ -73,5 +91,17 @@ const deleteComment = asyncHandler(async(req,res)=>{
     
 })
 
-export {addComment,updateComment,deleteComment}
+const getCommentbyUser = asyncHandler(async (req,res)=>{
+    const { page = 1, limit = 10 } = req.query;
+
+    const Comment = await comment.find({owner : req.User.id })
+    .sort({createdAt: -1})
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,Comment,"Comments fetched Successfully.")
+    )
+})
+
+export {getComment,addComment,updateComment,deleteComment,getCommentbyUser}
 
