@@ -4,8 +4,10 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { tweet } from "../models/tweet.model.js";
 
+
 const addTweet = asyncHandler(async(req,res)=>{
-    const content = req.body
+    const {content} = req.body
+    console.log(content)
     if(!content){
         throw new ApiError(400,"required field is empty.")
     }
@@ -26,19 +28,21 @@ const addTweet = asyncHandler(async(req,res)=>{
 })
 
 const updateTweet = asyncHandler(async(req,res)=>{
-    const tweetId = req.params
-    const content = req.body
+    const tweetId = req.params.id
+    const {content} = req.body
     if(!tweetId || !content){
         throw new ApiError(400,"Required field is empty.")
     }
-    const tweetOwner = req.User.id
-    const Tweet = await tweet.find(tweetId)
 
-    if(Tweet.owner !== tweetOwner){
+    const tweetOwner = req.User.id
+    const Tweet = await tweet.findById(tweetId)
+console.log("hi")
+    if(Tweet.owner === tweetOwner){
         throw new ApiError(400,"Cannot other people tweets.")
     }
     Tweet.content = content
     await Tweet.save()
+    console.log("hi")
     return res
     .status(200)
     .json (
@@ -47,16 +51,16 @@ const updateTweet = asyncHandler(async(req,res)=>{
 })
 
 const deleteTweet = asyncHandler(async(req,res)=>{
-    const tweetId = req.params
+    const tweetId = req.params.id
     const TweetOwner = req.User.id
     if(!tweetId){
         throw new ApiError(400,"Required field is empty.")
     }
-    const Tweet = await tweet.find(tweetId)
+    const Tweet = await tweet.findById(tweetId)
     if(!Tweet){
         throw new ApiError(400,"Tweet is not found.")
     }
-    if(Tweet.owner !== TweetOwner){
+    if(Tweet.owner === TweetOwner){
         throw new ApiError(400,"Can not delete other people's tweet.")
     }
     await Tweet.deleteOne();
@@ -66,4 +70,13 @@ const deleteTweet = asyncHandler(async(req,res)=>{
         new ApiResponse(200,"Tweet deleted Successfully.")
     )
 })
-export {addTweet,updateTweet,deleteTweet}
+
+const getUserTweet = asyncHandler(async(req,res)=>{
+    const Tweet = await tweet.find({owner: req.User.id})
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,Tweet,"User's Tweet fetched successfully")
+    )
+})
+export {addTweet,updateTweet,deleteTweet,getUserTweet}
