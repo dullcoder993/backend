@@ -59,30 +59,69 @@ const updatePlaylist = asyncHandler(async(req,res)=>{
 })
 
 const getUserPlaylist = asyncHandler(async(req,res)=>{
-    const Playlist = await playlist.find({owner : req.User.id})
-    if(!Playlist){
-        throw new ApiError(400,"Playlist is not found.")
-    }
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200,Playlist,"User Playlist is fetched.")
-    )
-})
-
-const getPlaylist = asyncHandler(async(req,res)=>{
     const playlistId = req.params.id
     if(!playlistId){
-        throw new ApiError(400,"Playlist Id required.")
+        throw new ApiError(400,"Playlist Id requird.")
     }
-    const Playlist = await playlist.findById(playlistId)
-    if(!Playlist){
-        throw new ApiError(400,"playist is not found.")
+    const Play = await playlist.aggregate([
+        {
+           $match:{
+            _id : new mongoose.Types.ObjectId(playlistId)
+           }
+        },
+        {
+            $lookup:{
+                from:"videos",
+                localField:"videos",
+                foreignField:"_id",
+                as:"videos"
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "videos.owner",
+                foreignField: "_id",
+                as: "videoOwners"
+            }
+        },
+        {
+            $addFields:{
+                videos: {
+                    $map:{
+                        input : "$videos",
+                        as:"video",
+                        in:{
+                            _id : "$$video._id",
+                            title: "$$video.title",
+                            thumbnail:"$$video.thumbnail",
+                            owner: {
+                                $arrayElemAt : [
+                                    {
+                                        $filter : {
+                                            input : "$videoOwners",
+                                            as : "user",
+                                            cond:{
+                                                $eq:["$$user._id","$$video.owner"]
+                                            }
+                                        }
+                                    },
+                                    0
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+    ])
+    if(!Play.length){
+    throw new ApiError(400,"Something went wrong.")
     }
     return res
     .status(200)
     .json(
-        new ApiResponse(200,Playlist,"Playlist data fetched Successfully.")
+        200,Play[0],"Plaulist fetched successfully."
     )
 })
 
@@ -112,4 +151,48 @@ const addVideo = asyncHandler(async(req,res)=>{
     .json(200,Playlist,"Video added successfully")
 })
 
-export {createPlaylist,updatePlaylist,getUserPlaylist,getPlaylist,addVideo}
+const removeVideo = asyncHandler(async(req,res)=>{
+    const {playlistId, videoId} = req.params.id
+    if(!playlistId || !videoId){
+        throw new ApiError(400,"required field is empty.")
+    }
+    const Playlist = await playlist.findById(playlistId)
+    if(!Playlist){
+        throw new ApiError(400,"Playlist is not exist.")
+    }
+    const Video = await Playlist.find({
+        videos:videoId
+    })
+    if(!Video){
+        throw new ApiError(400,"Video is not found.")
+    }
+    await Video.deleteOne()
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,"Video removed Successfully.")
+    )
+})
+
+const deletePlaylist = asyncHandler(async(req,res)=>{
+    const playlistId = req.params.id
+    if(!playlistId){
+        throw new ApiError(400,"Playlist Id required.")
+    }
+    const Playlist = await playlist.findById(playlistId)
+    if(!Playlist){
+        throw new ApiError(400,"Playlist is not found.")
+    }
+    const checkowner = req.User.id == Playlist.owner.id
+    if(!checkowner){
+        throw new ApiError(400,"Can't delete playlist")
+    }
+    await Playlist.deleteOne()
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,"Playlist deleted Successfully.")
+    )
+})
+
+export {createPlaylist,updatePlaylist,getUserPlaylist,addVideo,deletePlaylist,removeVideo}
